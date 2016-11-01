@@ -1,0 +1,3 @@
+// The configured options and settings
+#define DATA_DIR "@DATA_DIR@"
+#define SHADER_DIR "@SHADER_DIR@"

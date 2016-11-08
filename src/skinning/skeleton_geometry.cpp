@@ -174,8 +174,8 @@ skeleton_geometry local_to_global(skeleton_geometry const& sk_local,skeleton_par
         global_joint = sk_local[i]; // No parent => this is a global joint
       else
       {
-         global_joint.position = sk_local[p_i].orientation * sk_local[i].position + sk_local[p_i].position;
-         global_joint.orientation = sk_local[p_i].orientation * sk_local[i].orientation;
+         global_joint.position = sk_global[p_i].orientation * sk_local[i].position + sk_global[p_i].position;
+         global_joint.orientation = sk_global[p_i].orientation * sk_local[i].orientation;
       }
       sk_global.push_back(global_joint);
     }

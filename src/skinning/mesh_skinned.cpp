@@ -42,6 +42,12 @@ vertex_weight_parameter const& mesh_skinned::vertex_weight(int const index) cons
 
     return vertex_weight_data[index];
 }
+
+float const* mesh_skinned::pointer_weight()
+{
+  return &weight_data[0];
+}
+
 vertex_weight_parameter& mesh_skinned::vertex_weight(int const index)
 {
     ASSERT_CPE(index>=0,"Index ("+std::to_string(index)+") must be positive");
@@ -129,6 +135,7 @@ void mesh_skinned::load(std::string const& filename)
                     {
                         tokens >> temp_skinning[k_bone].joint_id;
                         tokens >> temp_skinning[k_bone].weight;
+                        weight_data.push_back(temp_skinning[k_bone].weight);
                     }
                     skinning_info.push_back(temp_skinning);
                 }

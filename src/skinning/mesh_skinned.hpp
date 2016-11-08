@@ -47,6 +47,8 @@ public:
     /** Access to the skinning weights associated to a given vertex */
     vertex_weight_parameter& vertex_weight(int index);
 
+    float const* pointer_weight();
+
     /** Access to original vertex */
     vec3 const& vertex_original(int index) const;
 
@@ -81,6 +83,9 @@ private:
 
     /** Internal storage for the vertex weight information*/
     std::vector<vertex_weight_parameter> vertex_weight_data;
+    std::vector<float> weight_data;
+
+
 };
 
 

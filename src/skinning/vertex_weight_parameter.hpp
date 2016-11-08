@@ -25,7 +25,7 @@
 #include "skinning_weight.hpp"
 #include <array>
 
-#define WEIGHTS_PER_VERTEX 6
+#define WEIGHTS_PER_VERTEX 4
 
 namespace cpe
 {

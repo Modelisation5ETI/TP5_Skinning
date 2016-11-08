@@ -52,6 +52,10 @@ GLint get_uni_loc(GLuint program, const GLchar *name);
 GLuint read_shader(std::string const&vertex_filename,
                    std::string const&fragment_filename);
 
+GLuint read_shader(const std::string &vertex_filename,
+                   const std::string &fragment_filename,
+                   const std::vector<std::string> &attributes);
+
 /** Offset conversion for the VBO buffer (cast to a pointer) */
 GLubyte* buffer_offset(int offset);
 

@@ -53,6 +53,8 @@ private:
 
     /** Draw a set of line representing a skeleton */
     void draw_skeleton(std::vector<cpe::vec3> const& positions) const;
+    /** Draw the mesh skinning weights */
+    void draw_weight( cpe::mesh_skinned mesh ) const;
 
     /** Load a texture from a given file and returns its id */
     GLuint load_texture_file(std::string const& filename);
@@ -101,11 +103,12 @@ private:
     GLuint shader_mesh;
     /** The id of the shader to draw skeleton */
     GLuint shader_skeleton;
-
+    /** The id of the shader to visualize weights */
+    GLuint shader_weight;
 
     void setup_shader_mesh(GLuint shader_id);
     void setup_shader_skeleton(GLuint shader_id);
-
+    void setup_shader_weight(GLuint shader_id);
 
     // Time handling for the cylinder animation
     QTime time_cylinder;

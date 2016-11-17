@@ -33,6 +33,10 @@ myWindow::myWindow(QWidget *parent)
     connect(ui->quit,SIGNAL(clicked()),this,SLOT(action_quit()));
     connect(ui->draw,SIGNAL(clicked()),this,SLOT(action_draw()));
     connect(ui->wireframe,SIGNAL(clicked()),this,SLOT(action_wireframe()));
+    connect(ui->skeleton,SIGNAL(clicked()),this,SLOT(action_skeleton()));
+    connect(ui->staticPos,SIGNAL(clicked()),this,SLOT(action_staticPos()));
+    connect(ui->weight,SIGNAL(clicked()),this,SLOT(action_weight()));
+    connect(ui->blink,SIGNAL(clicked()),this,SLOT(action_blink()));
 
 }
 
@@ -53,5 +57,28 @@ void myWindow::action_wireframe()
 {
     bool const state_wireframe=ui->wireframe->isChecked();
     glWidget->wireframe(state_wireframe);
+}
+
+void myWindow::action_skeleton()
+{
+    bool const state_wireframe=ui->skeleton->isChecked();
+   // glWidget->wireframe(state_wireframe);
+}
+
+void myWindow::action_weight()
+{
+    bool const state_wireframe=ui->weight->isChecked();
+    //glWidget->wireframe(state_wireframe);
+}
+
+void myWindow::action_staticPos()
+{
+    glWidget->change_staticPos_state();
+}
+
+void myWindow::action_blink()
+{
+    bool const state_wireframe=ui->blink->isChecked();
+   // glWidget->wireframe(state_wireframe);
 }
 

@@ -36,6 +36,14 @@ private slots:
     void action_draw();
     /** Set the Wireframe mode for the meshes */
     void action_wireframe();
+    /** Set the squeleton mode for the meshes */
+    void action_skeleton();
+    /** Set the weight mode for the meshes */
+    void action_weight();
+    /** Set the squeleton mode for the meshes */
+    void action_staticPos();
+    /** Set the weight mode for the meshes */
+    void action_blink();
 
 private:
 

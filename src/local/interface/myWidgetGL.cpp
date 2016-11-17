@@ -27,7 +27,12 @@ void myWidgetGL::paintGL()
 
     //draw 3D scene
     if(draw_state)
-        scene_3d.draw_scene();
+        scene_3d.draw_scene(staticPos_state);
+
+    //draw 3D scene
+    if(staticPos_state)
+        std::cout<<"Pause"<<staticPos_state<<std::endl;
+        scene_3d.draw_scene(staticPos_state);
 
     //draw indicating axes
     draw_axes();
@@ -178,6 +183,13 @@ void myWidgetGL::change_draw_state()
     draw_state=!draw_state;
     updateGL();
 }
+
+void myWidgetGL::change_staticPos_state()
+{
+    staticPos_state=!staticPos_state;
+    updateGL();
+}
+
 void myWidgetGL::wireframe(bool const is_wireframe)
 {
     if(is_wireframe==true)
@@ -187,6 +199,49 @@ void myWidgetGL::wireframe(bool const is_wireframe)
 
     updateGL();
 }
+
+void myWidgetGL::weight(bool const is_weight)
+{
+    if(is_weight==true)
+    {
+        std::cout<<"HELLO"<<std::endl;
+    }
+    else
+    {
+
+    }
+
+    updateGL();
+}
+
+void myWidgetGL::skeleton(bool const is_skeleton)
+{
+    if(is_skeleton==true)
+    {
+
+    }
+    else
+    {
+
+    }
+
+    updateGL();
+}
+
+//void myWidgetGL::staticPos(bool const is_staticPos)
+//{
+//    if(is_staticPos==true)
+//    {
+//        //no animation apply
+
+//    }
+//    else
+//    {
+//        //animation apply
+//    }
+
+//    updateGL();
+//}
 
 
 void myWidgetGL::resizeGL(int const width,int const height)

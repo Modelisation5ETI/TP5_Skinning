@@ -35,7 +35,7 @@ public:
     void load_scene();
 
     /**  Method called at every frame */
-    void draw_scene();
+    void draw_scene(bool staticPos);
 
     /** Set the pointer to the parent Widget */
     void set_widget(myWidgetGL* widget_param);

@@ -186,34 +186,53 @@ void scene::load_scene()
     sk_cat_animation.load("cat.animations",sk_cat_parent_id.size());
 }
 
-void scene::draw_scene()
+void scene::draw_scene(bool staticPos)
 {
-    // Gestion des timers (question 14)
-     int const time_cylinder_max = 2000;
-     if( time_cylinder.elapsed()>time_cylinder_max )
-     {
-         time_cylinder.restart();
-         frame_cylinder_current = (frame_cylinder_current+1)%sk_cylinder_animation.size();
-     }
-     frame_cylinder_alpha = time_cylinder.elapsed()/static_cast<float>(time_cylinder_max);
+      std::cout<<"staticPos2"<<staticPos<<std::endl;
 
-     int const time_cat_max = 60;
-     if( time_cat.elapsed()>time_cat_max )
+     if(staticPos)
      {
-         time_cat.restart();
-         frame_cat_current = (frame_cat_current+1)%sk_cat_animation.size();
+         std::cout<<"frameStatic"<<std::endl;
+         frame_cylinder_current = 0;
+         frame_cylinder_alpha = 0;
+         time_cylinder.restart();
      }
-     frame_cat_alpha = time_cat.elapsed()/static_cast<float>(time_cat_max);
+
+
+     if(!staticPos)
+     {
+         // Gestion des timers (question 14)
+         int const time_cylinder_max = 2000;
+         if( time_cylinder.elapsed()>time_cylinder_max )
+         {
+           time_cylinder.restart();
+           frame_cylinder_current = (frame_cylinder_current+1)%sk_cylinder_animation.size();
+         }
+         frame_cylinder_alpha = time_cylinder.elapsed()/static_cast<float>(time_cylinder_max);
+
+             //Cat
+         int const time_cat_max = 60;
+         if( time_cat.elapsed()>time_cat_max )
+         {
+           time_cat.restart();
+           frame_cat_current = (frame_cat_current+1)%sk_cat_animation.size();
+         }
+           frame_cat_alpha = time_cat.elapsed()/static_cast<float>(time_cat_max);
+    }
+
+     //std::cout<<"Frame cylinder current : "<<frame_cylinder_current<<std::endl;
+
+    //frame_cat_alpha = 0;
 
     // Mise en place du shader pour les squelettes
     setup_shader_skeleton(shader_skeleton);
 
     //Here we can draw skeletons as 3D segments
     skeleton_geometry const sk_cylinder_global =
-      local_to_global( sk_cylinder_animation( frame_cylinder_current, frame_cylinder_alpha ), sk_cylinder_parent_id );
+     local_to_global( sk_cylinder_animation( frame_cylinder_current, frame_cylinder_alpha ), sk_cylinder_parent_id );
     std::vector<vec3> const sk_cylinder_bones =
       extract_bones ( sk_cylinder_global , sk_cylinder_parent_id );
-    draw_skeleton( sk_cylinder_bones );
+    draw_skeleton(sk_cylinder_bones );
 
     skeleton_geometry const sk_cat_global =
       local_to_global( sk_cat_animation( frame_cat_current, frame_cat_alpha ), sk_cat_parent_id );
@@ -225,13 +244,17 @@ void scene::draw_scene()
     setup_shader_mesh(shader_mesh);
     mesh_ground_opengl.draw();
 
+
     // Draw the cylinder
     skeleton_geometry const sk_cylinder_inverse_bind_pose =
       inversed( sk_cylinder_bind_pose );
     skeleton_geometry const sk_cylinder_binded =
       multiply( sk_cylinder_global, sk_cylinder_inverse_bind_pose );
+
     setup_shader_skinning(shader_skinning, sk_cylinder_binded);
     mesh_cylinder.draw();
+
+
 
     // Draw the cat
     skeleton_geometry const sk_cat_inverse_bind_pose =
@@ -308,7 +331,7 @@ void scene::draw_skeleton(std::vector<vec3> const& positions) const
     glBufferData(GL_ARRAY_BUFFER , sizeof(vec3)*positions.size() , &positions[0] , GL_STATIC_DRAW);    PRINT_OPENGL_ERROR();
 
     // Draw data
-    glEnableClientState(GL_VERTEX_ARRAY);                                                              PRINT_OPENGL_ERROR();
+   glEnableClientState(GL_VERTEX_ARRAY);                                                              PRINT_OPENGL_ERROR();
     glVertexPointer(3, GL_FLOAT, 0, 0);                                                                PRINT_OPENGL_ERROR();
     glDrawArrays(GL_LINES,0,positions.size());                                                         PRINT_OPENGL_ERROR();
 

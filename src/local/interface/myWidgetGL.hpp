@@ -29,8 +29,18 @@ public:
 
     /** Set the drawing on/off */
     void change_draw_state();
+    /** Set the staticPos on/off */
+    void change_staticPos_state();
     /** Set the wireframe on/off */
     void wireframe(bool est_actif);
+    /** Set the skeleton on/off */
+    void skeleton(bool est_actif);
+    /** Set the staticPos on/off */
+    void staticPos(bool est_actif);
+    /** Set the blink on/off */
+    void blink(bool est_actif);
+    /** Set the weight on/off */
+    void weight(bool est_actif);
     /** Get the current cameras values */
     cpe::camera_matrices const& camera() const;
 
@@ -79,6 +89,9 @@ private:
 
     /** Enable/Disable the drawing of the 3D scene*/
     bool draw_state;
+
+    /** Enable/Disable staticPosition / animation */
+    bool staticPos_state;
 
     /** Helper class for drawing the 3D axes */
     cpe::axes_helper axes;

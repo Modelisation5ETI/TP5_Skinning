@@ -24,6 +24,8 @@
 
 #include "../lib/3d/vec3.hpp"
 #include "../lib/3d/quaternion.hpp"
+#include "../lib/3d/mat4.hpp"
+#include "../lib/3d/mat3.hpp"
 
 namespace cpe
 {
@@ -38,6 +40,8 @@ struct skeleton_joint
     vec3 position;
     /** Orientation of the joint */
     quaternion orientation;
+
+    mat4 to_mat4();
 };
 }
 

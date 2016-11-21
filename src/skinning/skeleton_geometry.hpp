@@ -73,11 +73,16 @@ public:
     */
     void save(std::string const& filename,skeleton_parent_id const& parent_id);
 
+    std::vector<mat4> to_mat4();
+    float const* to_mat4_pointer();
 
 private:
 
     /** Internal data of the joint geometry*/
     std::vector<skeleton_joint> data;
+
+    std::vector<mat4> transform_data;
+
 };
 
 /** Print all the data */

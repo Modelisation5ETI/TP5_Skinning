@@ -22,9 +22,12 @@
 #ifndef MESH_SKINNED_HPP
 #define MESH_SKINNED_HPP
 
-#include "vertex_weight_parameter.hpp"
+#include "GL/glew.h"
+
+#include "../lib/3d/quaternion.hpp"
 #include "../lib/mesh/mesh.hpp"
 
+#define WEIGHTS_PER_VERTEX 4
 
 namespace cpe
 {
@@ -42,23 +45,24 @@ public:
 
     using mesh::mesh;
 
-    /** Access to the skinning weights associated to a given vertex */
-    vertex_weight_parameter const& vertex_weight(int index) const;
-    /** Access to the skinning weights associated to a given vertex */
-    vertex_weight_parameter& vertex_weight(int index);
+    /** Pointer access to the weights*/
+    float const* pointer_weight() const;
+    /** Pointer access to the joint IDs*/
+    int const* pointer_jointID() const;
 
-    float const* pointer_weight();
-
-    /** Access to original vertex */
-    vec3 const& vertex_original(int index) const;
+    /** Draw skinned mesh */
+    void draw() const;
 
     /** Add a vertex both as an original position and in the default vertex storage
         \note overloading of the add_vertex method of mesh
     */
     void add_vertex(vec3 const& p);
 
-    /** Add skinning weights information to the data structure (in the same order than the vertices) */
-    void add_vertex_weight(vertex_weight_parameter const& w);
+    /** Add skinning weights to the data structure (in the same order than the vertices) */
+    void add_vertex_weight(float const& w);
+
+    /** Add joint ID to the data structure (in the same order than the vertices) */
+    void add_jointID(int const& j);
 
     /** Size of the vertex weights information (should be equals to size_vertex() when all the informations are provided) */
     int size_vertex_weight() const;
@@ -68,22 +72,13 @@ public:
     */
     void load(std::string const& filename);
 
-    /** Apply the skinning deformation using a given skeleton deformation
-     * \note The skeleton should store the matrices T*B^{-1}, where T is the
-     * global frame of the joint, and B is the bind pose of the joint in the local frame.
-    */
-    void apply_skinning(skeleton_geometry const& skeleton);
-
 private:
-
-    /** Internal storage for the original vertices positions.
-     *  These positions are not modified when applying the skinning.
-    */
-    std::vector<vec3> vertices_original_data;
-
     /** Internal storage for the vertex weight information*/
-    std::vector<vertex_weight_parameter> vertex_weight_data;
     std::vector<float> weight_data;
+    /** Internal storage for the vertex jointID information*/
+    std::vector<int> joint_id;
+
+
 
 
 };

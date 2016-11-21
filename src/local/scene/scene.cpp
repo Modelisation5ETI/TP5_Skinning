@@ -43,9 +43,7 @@ void scene::create_cylinder(float radius, float length,
                             unsigned c_steps, unsigned l_steps)
 {
   // Weight parameters for the skinning (à décommenter à partir de la question 15)
-   vertex_weight_parameter weight_parameter;
-   weight_parameter[0].joint_id = 0;
-   weight_parameter[1].joint_id = 1;
+
   // Creating the vertices
   for (unsigned i = 0; i <= l_steps; i++)
   {
@@ -55,17 +53,16 @@ void scene::create_cylinder(float radius, float length,
       float angle = M_PI * 2.f * j / c_steps;
       mesh_cylinder.add_vertex(vec3(radius * cos(angle),
                                     radius * sin(angle), z));
-      // skinning weights (à décommenter à partir de la question 15)
-      // À modifier lors de la question 19
-//       if (z / length < 0.5)
-//       {
-         weight_parameter[0].weight = 1.f - z/length;
-         weight_parameter[1].weight = z/length;
-//       } else {
-//         weight_parameter[0].weight = z/length;
-//         weight_parameter[1].weight = z/length;
-//       }
-       mesh_cylinder.add_vertex_weight(weight_parameter);
+
+      mesh_cylinder.add_vertex_weight(1.f - z/length);
+      mesh_cylinder.add_vertex_weight(z/length);
+      mesh_cylinder.add_vertex_weight(0);
+      mesh_cylinder.add_vertex_weight(0);
+
+      mesh_cylinder.add_jointID(0);
+      mesh_cylinder.add_jointID(1);
+      mesh_cylinder.add_jointID(0);
+      mesh_cylinder.add_jointID(0);
     }
   }
 
@@ -83,7 +80,6 @@ void scene::create_cylinder(float radius, float length,
     }
   }
   mesh_cylinder.fill_empty_field_by_default();
-  mesh_cylinder_opengl.fill_vbo(mesh_cylinder);
 
   // The skeleton parent structure
   // Ajoutez les indices des parents dans la variable sk_cylinder_parent_id (question 7)
@@ -154,13 +150,16 @@ void scene::load_scene()
     // Preload default structure               //
     //*****************************************//
     texture_default = load_texture_file("white.jpg");
+
     shader_mesh     = read_shader("shader_mesh.vert",
                                   "shader_mesh.frag");           PRINT_OPENGL_ERROR();
     shader_skeleton = read_shader("shader_skeleton.vert",
                                   "shader_skeleton.frag");       PRINT_OPENGL_ERROR();
-    shader_weight = read_shader("shader_weight.vert",
-                                  "shader_weight.frag",
-                                {"position","weight"});       PRINT_OPENGL_ERROR();
+
+    shader_skinning = read_shader("shader_skinning.vert",
+                                  "shader_skinning.frag",
+                                {"position","normal","text_coord",
+                                 "weight","jointID"});       PRINT_OPENGL_ERROR();
 
 
     //*****************************************//
@@ -175,14 +174,12 @@ void scene::load_scene()
     //*****************************************//
     create_cylinder(); // use default values
 
-
     //*****************************************//
     // Load cat
     //*****************************************//
     mesh_cat.load("cat.obj");
     texture_cat=load_texture_file("cat.png");
     mesh_cat.fill_empty_field_by_default();
-    mesh_cat_opengl.fill_vbo(mesh_cat);
 
     sk_cat_bind_pose.load("cat_bind_pose.skeleton");
     sk_cat_parent_id.load("cat_bind_pose.skeleton");
@@ -200,8 +197,6 @@ void scene::draw_scene()
      }
      frame_cylinder_alpha = time_cylinder.elapsed()/static_cast<float>(time_cylinder_max);
 
-//     std::cout<<"Frame cylinder current : "<<frame_cylinder_current<<std::endl;
-
      int const time_cat_max = 60;
      if( time_cat.elapsed()>time_cat_max )
      {
@@ -214,27 +209,20 @@ void scene::draw_scene()
     setup_shader_skeleton(shader_skeleton);
 
     //Here we can draw skeletons as 3D segments
-    // question 11
     skeleton_geometry const sk_cylinder_global =
       local_to_global( sk_cylinder_animation( frame_cylinder_current, frame_cylinder_alpha ), sk_cylinder_parent_id );
     std::vector<vec3> const sk_cylinder_bones =
       extract_bones ( sk_cylinder_global , sk_cylinder_parent_id );
     draw_skeleton( sk_cylinder_bones );
 
-
     skeleton_geometry const sk_cat_global =
       local_to_global( sk_cat_animation( frame_cat_current, frame_cat_alpha ), sk_cat_parent_id );
     std::vector<vec3> const sk_cat_bones =
       extract_bones ( sk_cat_global , sk_cat_parent_id );
-//    draw_skeleton( sk_cat_bones );
+    draw_skeleton( sk_cat_bones );
 
-
-    setup_shader_weight(shader_weight);
-    draw_weight( mesh_cat );
-
-
+    // Draw the ground
     setup_shader_mesh(shader_mesh);
-
     mesh_ground_opengl.draw();
 
     // Draw the cylinder
@@ -242,26 +230,17 @@ void scene::draw_scene()
       inversed( sk_cylinder_bind_pose );
     skeleton_geometry const sk_cylinder_binded =
       multiply( sk_cylinder_global, sk_cylinder_inverse_bind_pose );
-    mesh_cylinder.apply_skinning( sk_cylinder_binded );
-    mesh_cylinder.fill_normal();
-    mesh_cylinder_opengl.update_vbo_vertex( mesh_cylinder );
-    mesh_cylinder_opengl.update_vbo_normal( mesh_cylinder );
-    mesh_cylinder_opengl.draw();
-
+    setup_shader_skinning(shader_skinning, sk_cylinder_binded);
+    mesh_cylinder.draw();
 
     // Draw the cat
-    glBindTexture(GL_TEXTURE_2D,texture_cat);
     skeleton_geometry const sk_cat_inverse_bind_pose =
       inversed( sk_cat_bind_pose );
-    skeleton_geometry const sk_cat_binded =
+    skeleton_geometry sk_cat_binded =
       multiply( sk_cat_global, sk_cat_inverse_bind_pose );
-    mesh_cat.apply_skinning( sk_cat_binded );
-    mesh_cat.fill_normal();
-    mesh_cat_opengl.update_vbo_vertex( mesh_cat );
-    mesh_cat_opengl.update_vbo_normal( mesh_cat );
-//    mesh_cat_opengl.draw();
-
-
+    setup_shader_skinning(shader_skinning, sk_cat_binded);
+    glBindTexture(GL_TEXTURE_2D,texture_cat);
+    mesh_cat.draw();
 }
 
 
@@ -301,7 +280,7 @@ void scene::setup_shader_skeleton(GLuint const shader_id)
     glLineWidth(3.0f);                                                                                 PRINT_OPENGL_ERROR();
 }
 
-void scene::setup_shader_weight(GLuint const shader_id)
+void scene::setup_shader_skinning(GLuint const shader_id, skeleton_geometry geometry)
 {
     //Setup uniform parameters
     glUseProgram(shader_id);                                                                           PRINT_OPENGL_ERROR();
@@ -310,8 +289,10 @@ void scene::setup_shader_weight(GLuint const shader_id)
     camera_matrices const& cam=pwidget->camera();
 
     //Set Uniform data to GPU
+    glUniform1i(get_uni_loc(shader_id,"texture"),0);PRINT_OPENGL_ERROR();
     glUniformMatrix4fv(get_uni_loc(shader_id,"camera_modelview"),1,false,cam.modelview.pointer());     PRINT_OPENGL_ERROR();
     glUniformMatrix4fv(get_uni_loc(shader_id,"camera_projection"),1,false,cam.projection.pointer());   PRINT_OPENGL_ERROR();
+    glUniformMatrix4fv(get_uni_loc(shader_id,"skeleton_geometry"),geometry.size(),false,geometry.to_mat4_pointer());   PRINT_OPENGL_ERROR();
 
     glLineWidth(1.0f);                                                                                       PRINT_OPENGL_ERROR();
 }
@@ -335,43 +316,9 @@ void scene::draw_skeleton(std::vector<vec3> const& positions) const
     glDeleteBuffers(1,&vbo_skeleton);                                                                  PRINT_OPENGL_ERROR();
 }
 
-
-void scene::draw_weight( mesh_skinned mesh ) const
-{
-    // Create temporary VBO to store data
-    GLuint vbos[2], vboi, vao;                                                      PRINT_OPENGL_ERROR();
-
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    glGenBuffers(2, vbos);                                                                           PRINT_OPENGL_ERROR();
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);                                                          PRINT_OPENGL_ERROR();
-    glBufferData(GL_ARRAY_BUFFER , sizeof(vec3)*mesh.size_vertex() , &(mesh.vertex(0)) , GL_STATIC_DRAW);    PRINT_OPENGL_ERROR();
-    glEnableVertexAttribArray(0);                                                                    PRINT_OPENGL_ERROR();
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);                                           PRINT_OPENGL_ERROR();
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[1]);                                                          PRINT_OPENGL_ERROR();
-    glBufferData(GL_ARRAY_BUFFER , sizeof(vec4)*mesh.size_vertex() , mesh.pointer_weight() , GL_STATIC_DRAW);    PRINT_OPENGL_ERROR();
-    glEnableVertexAttribArray(1);                                                                    PRINT_OPENGL_ERROR();
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);                                           PRINT_OPENGL_ERROR();
-
-    glGenBuffers(1, &vboi);                                                                          PRINT_OPENGL_ERROR();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboi);                                                     PRINT_OPENGL_ERROR();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,3*sizeof(int)*mesh.size_connectivity(),mesh.pointer_triangle_index(),GL_STATIC_DRAW); PRINT_OPENGL_ERROR();
-
-    glDrawElements(GL_TRIANGLES, 3*mesh.size_connectivity(), GL_UNSIGNED_INT, 0); PRINT_OPENGL_ERROR();
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-
-    glDeleteBuffers(2,vbos);  PRINT_OPENGL_ERROR();
-
-}
-
 scene::scene()
     :shader_mesh(0)
 {}
-
 
 GLuint scene::load_texture_file(std::string const& filename)
 {

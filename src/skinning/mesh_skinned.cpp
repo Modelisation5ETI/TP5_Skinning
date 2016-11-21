@@ -23,6 +23,9 @@
 #include "../lib/mesh/mesh_io.hpp"
 #include "skeleton_geometry.hpp"
 
+#include "../lib/opengl/glutils.hpp"
+#include "../lib/common/error_handling.hpp"
+
 #include <sstream>
 #include <fstream>
 
@@ -32,35 +35,83 @@ namespace cpe
 
 int mesh_skinned::size_vertex_weight() const
 {
-    return vertex_weight_data.size();
+    return weight_data.size()/WEIGHTS_PER_VERTEX;
 }
 
-vertex_weight_parameter const& mesh_skinned::vertex_weight(int const index) const
-{
-    ASSERT_CPE(index>=0,"Index ("+std::to_string(index)+") must be positive");
-    ASSERT_CPE(index<int(vertex_weight_data.size()) , "Index ("+std::to_string(index)+") must be less than the current size of the weight vector ("+std::to_string(vertex_weight_data.size())+")");
-
-    return vertex_weight_data[index];
-}
-
-float const* mesh_skinned::pointer_weight()
+float const* mesh_skinned::pointer_weight() const
 {
   return &weight_data[0];
 }
 
-vertex_weight_parameter& mesh_skinned::vertex_weight(int const index)
+int const* mesh_skinned::pointer_jointID() const
 {
-    ASSERT_CPE(index>=0,"Index ("+std::to_string(index)+") must be positive");
-    ASSERT_CPE(index<int(vertex_weight_data.size()),"Index ("+std::to_string(index)+") must be less than the current size of the weight vector ("+std::to_string(vertex_weight_data.size())+")");
-
-    return vertex_weight_data[index];
+  return &joint_id[0];
 }
 
-void mesh_skinned::add_vertex_weight(vertex_weight_parameter const& w)
+void mesh_skinned::draw() const
 {
-    vertex_weight_data.push_back(w);
+    // Create temporary VBO to store data
+    GLuint vbos[5], vboi, vao;                                                                             PRINT_OPENGL_ERROR();
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(5, vbos);                                                                                 PRINT_OPENGL_ERROR();
+
+    // Positions
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);                                                                PRINT_OPENGL_ERROR();
+    glBufferData(GL_ARRAY_BUFFER , sizeof(vec3)*size_vertex() , this->pointer_vertex() , GL_STATIC_DRAW);  PRINT_OPENGL_ERROR();
+    glEnableVertexAttribArray(0);                                                                          PRINT_OPENGL_ERROR();
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);                                                 PRINT_OPENGL_ERROR();
+
+    // Normals
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[1]);                                                                PRINT_OPENGL_ERROR();
+    glBufferData(GL_ARRAY_BUFFER , sizeof(vec4)*size_normal() , this->pointer_normal() , GL_STATIC_DRAW);  PRINT_OPENGL_ERROR();
+    glEnableVertexAttribArray(1);                                                                          PRINT_OPENGL_ERROR();
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);                                                 PRINT_OPENGL_ERROR();
+
+    // Texture coords
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[2]);                                                                              PRINT_OPENGL_ERROR();
+    glBufferData(GL_ARRAY_BUFFER , sizeof(vec4)*size_texture_coord() , this->pointer_texture_coord() , GL_STATIC_DRAW);  PRINT_OPENGL_ERROR();
+    glEnableVertexAttribArray(2);                                                                                        PRINT_OPENGL_ERROR();
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    // Weights
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[3]);                                                                PRINT_OPENGL_ERROR();
+    glBufferData(GL_ARRAY_BUFFER , sizeof(vec4)*size_vertex() , this->pointer_weight() , GL_STATIC_DRAW);  PRINT_OPENGL_ERROR();
+    glEnableVertexAttribArray(3);                                                                          PRINT_OPENGL_ERROR();
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 0, 0);                                                 PRINT_OPENGL_ERROR();
+
+    // Joint IDs
+    glBindBuffer(GL_ARRAY_BUFFER, vbos[4]);                                                           PRINT_OPENGL_ERROR();
+    glBufferData(GL_ARRAY_BUFFER , sizeof(vec4)*size_vertex() , pointer_jointID() , GL_STATIC_DRAW);  PRINT_OPENGL_ERROR();
+    glEnableVertexAttribArray(4);                                                                     PRINT_OPENGL_ERROR();
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glGenBuffers(1, &vboi);                                                                                          PRINT_OPENGL_ERROR();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboi);                                                                     PRINT_OPENGL_ERROR();
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,3*sizeof(int)*size_connectivity(),pointer_triangle_index(),GL_STATIC_DRAW); PRINT_OPENGL_ERROR();
+
+    glDrawElements(GL_TRIANGLES, 3*size_connectivity(), GL_UNSIGNED_INT, 0);  PRINT_OPENGL_ERROR();
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glDisableVertexAttribArray(3);
+    glDisableVertexAttribArray(4);
+
+    glDeleteBuffers(5,vbos);  PRINT_OPENGL_ERROR();
+
 }
 
+void mesh_skinned::add_vertex_weight(float const& w)
+{
+    weight_data.push_back(w);
+}
+
+void mesh_skinned::add_jointID(int const& j)
+{
+    joint_id.push_back(j);
+}
 
 void mesh_skinned::load(std::string const& filename)
 {
@@ -75,9 +126,6 @@ void mesh_skinned::load(std::string const& filename)
         throw exception_cpe("Cannot open file "+filename,MACRO_EXCEPTION_PARAMETER);
 
     std::string buffer;
-
-    std::vector<vertex_weight_parameter> skinning_info;
-
 
     //read the whole file
     while(fid.good()==true)
@@ -129,15 +177,16 @@ void mesh_skinned::load(std::string const& filename)
                 //skinning
                 if(first_word=="sk")
                 {
-                    vertex_weight_parameter temp_skinning;
-                    int const N_bone = temp_skinning.size();
+                    int tmpJointID;
+                    float tmpWeight;
+                    int const N_bone = WEIGHTS_PER_VERTEX;
                     for(int k_bone=0 ; k_bone<N_bone ; ++k_bone)
                     {
-                        tokens >> temp_skinning[k_bone].joint_id;
-                        tokens >> temp_skinning[k_bone].weight;
-                        weight_data.push_back(temp_skinning[k_bone].weight);
+                        tokens >> tmpJointID;
+                        tokens >> tmpWeight;
+                        weight_data.push_back(tmpWeight);
+                        joint_id.push_back(tmpJointID);
                     }
-                    skinning_info.push_back(temp_skinning);
                 }
 
 
@@ -162,50 +211,13 @@ void mesh_skinned::load(std::string const& filename)
 
     fid.close();
 
-    //add the skinning weights in the mesh structure
-    for(auto const& s : skinning_info)
-        add_vertex_weight(normalized(s));
-
     ASSERT_CPE(size_vertex_weight()==size_vertex(),"Mesh skinned seems to have the wrong number of skinning weights");
 
 }
 
-
-vec3 const& mesh_skinned::vertex_original(int index) const
-{
-    ASSERT_CPE(index>=0,"Index ("+std::to_string(index)+") must be positive");
-    ASSERT_CPE(index<int(vertices_original_data.size()) , "Index ("+std::to_string(index)+") must be less than the current size of the vertex original vector ("+std::to_string(vertices_original_data.size())+")");
-
-    return vertices_original_data[index];
-}
-
 void mesh_skinned::add_vertex(vec3 const& p)
 {
-    mesh::add_vertex(p);
-    vertices_original_data.push_back(p);
-}
-
-void mesh_skinned::apply_skinning(skeleton_geometry const& skeleton)
-{
-    int const N_vertex = size_vertex();
-    ASSERT_CPE(N_vertex==int(vertices_original_data.size()),"Incorrect size");
-
-    for(int k_vertex=0 ; k_vertex<N_vertex ; ++k_vertex)
-    {
-        //TO DO: Calculer deformation par skinning (question 18)
-        vertex_weight_parameter const& skinning_info = vertex_weight(k_vertex);
-        int const N_joint = skinning_info.size();
-
-        //vec3 p0 = vertex_original(k_vertex);
-        vec3 p_final(0.0f,0.0f,0.0f);
-        for(int k_joint=0 ; k_joint<N_joint ; ++k_joint)
-        {
-        skinning_weight weightInfo = skinning_info[k_joint];
-        p_final = p_final + weightInfo.weight * ( skeleton[weightInfo.joint_id].orientation * vertex_original(k_vertex) + skeleton[weightInfo.joint_id].position );
-        }
-        vertex(k_vertex) = p_final;
-    }
-
+  mesh::add_vertex(p);
 }
 
 }

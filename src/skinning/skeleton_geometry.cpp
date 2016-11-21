@@ -137,6 +137,27 @@ void skeleton_geometry::load(std::string const& filename)
     fid.close();
 }
 
+std::vector<mat4> skeleton_geometry::to_mat4()
+{
+  transform_data.clear();
+
+  for( unsigned int i = 0; i<data.size();i++ )
+    {
+    transform_data.push_back(data[i].to_mat4());
+    }
+
+  return transform_data;
+}
+
+float const* skeleton_geometry::to_mat4_pointer()
+{
+  to_mat4();
+  return transform_data[0].pointer();
+}
+
+
+
+
 std::vector<skeleton_joint>::iterator skeleton_geometry::begin() {return data.begin();}
 std::vector<skeleton_joint>::iterator skeleton_geometry::end() {return data.end();}
 std::vector<skeleton_joint>::const_iterator skeleton_geometry::begin() const {return data.begin();}

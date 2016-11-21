@@ -31,8 +31,6 @@ public:
 
     scene();
 
-
-
     /**  Method called only once at the beginning (load off files ...) */
     void load_scene();
 
@@ -41,7 +39,6 @@ public:
 
     /** Set the pointer to the parent Widget */
     void set_widget(myWidgetGL* widget_param);
-
 
 private:
 
@@ -63,7 +60,6 @@ private:
     /** Default id for the texture (white texture) */
     GLuint texture_default;
 
-
     /** Ground mesh */
     cpe::mesh mesh_ground;
     /** Ground mesh for OpenGL drawing */
@@ -71,8 +67,6 @@ private:
 
     /** Mesh of the skinned cylinder */
     cpe::mesh_skinned mesh_cylinder;
-    /** Mesh of the skinned cylinder for OpenGL drawing */
-    cpe::mesh_opengl mesh_cylinder_opengl;
 
     /** Skeleton of the bind pose for the cylinder */
     cpe::skeleton_geometry sk_cylinder_bind_pose;
@@ -83,8 +77,6 @@ private:
 
     /** Mesh of the skinned cat */
     cpe::mesh_skinned mesh_cat;
-    /** Mesh of the skinned cat for OpenGL drawing */
-    cpe::mesh_opengl mesh_cat_opengl;
     /** Texture of the cat */
     GLuint texture_cat;
 
@@ -95,17 +87,16 @@ private:
     /** Animation of the skeleton for the cat */
     cpe::skeleton_animation sk_cat_animation;
 
-
-
     /** The id of the shader to draw meshes */
     GLuint shader_mesh;
     /** The id of the shader to draw skeleton */
     GLuint shader_skeleton;
-
+    /** The id of the shader to compute skinning */
+    GLuint shader_skinning;
 
     void setup_shader_mesh(GLuint shader_id);
     void setup_shader_skeleton(GLuint shader_id);
-
+    void setup_shader_skinning(GLuint const shader_id,cpe::skeleton_geometry geometry);
 
     // Time handling for the cylinder animation
     QTime time_cylinder;

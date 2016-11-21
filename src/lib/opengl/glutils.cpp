@@ -209,6 +209,69 @@ GLuint read_shader(const std::string &vertex_filename,
   return program;
 }
 
+/*****************************************************************************\
+ * read_shader                                                               *
+\*****************************************************************************/
+GLuint read_shader(const std::string &vertex_filename,
+                   const std::string &fragment_filename,
+                   const std::vector<std::string> &attributes)
+{
+  GLint        status;
+  std::string  source;
+  const char  *cstring;
+  GLuint       program;
+
+  program = glCreateProgram(); PRINT_OPENGL_ERROR();
+
+  std::string shader_dir = SHADER_DIR;
+  shader_dir.append( "/" );
+
+  // Create the vertex shader.
+  if (vertex_filename != "")
+  {
+    GLuint handle = glCreateShader(GL_VERTEX_SHADER); PRINT_OPENGL_ERROR();
+    source = get_file_content( shader_dir + vertex_filename );
+    cstring = source.c_str();
+    glShaderSource(handle, 1, &cstring, nullptr);   PRINT_OPENGL_ERROR();
+    // Compile the vertex shader, and print out the compiler log file.
+    glCompileShader(handle); PRINT_OPENGL_ERROR();
+    glGetShaderiv(handle, GL_COMPILE_STATUS, &status); PRINT_OPENGL_ERROR();
+    print_shader_info_log(handle);
+    glAttachShader(program, handle); PRINT_OPENGL_ERROR();
+    if (!status) return 0;
+  }
+
+  // Create the fragment shader
+  if (fragment_filename != "")
+  {
+    GLuint handle = glCreateShader(GL_FRAGMENT_SHADER); PRINT_OPENGL_ERROR();
+    source = get_file_content( shader_dir + fragment_filename );
+    cstring = source.c_str();
+    glShaderSource(handle, 1, &cstring, nullptr); PRINT_OPENGL_ERROR();
+    // Compile the fragment shader, and print out the compiler log file.
+    glCompileShader(handle); PRINT_OPENGL_ERROR();
+    glGetShaderiv(handle, GL_COMPILE_STATUS, &status); PRINT_OPENGL_ERROR();
+    print_shader_info_log(handle);
+    glAttachShader(program, handle); PRINT_OPENGL_ERROR();
+    if (!status) return 0;
+  }
+
+  for (unsigned i = 0; i < attributes.size(); i++)
+  {
+    glBindAttribLocation(program, i, attributes[i].c_str()); PRINT_OPENGL_ERROR();
+  }
+
+  // Link the program object and print out the info log.
+  glLinkProgram(program); PRINT_OPENGL_ERROR();
+  glGetProgramiv(program, GL_LINK_STATUS, &status); PRINT_OPENGL_ERROR();
+  print_program_info_log(program);
+  if (!status) return 0;
+
+  // Install program object as part of current state.
+  glUseProgram(program); PRINT_OPENGL_ERROR();
+
+  return program;
+}
 
 /*****************************************************************************\
  * Buffer offset                                                              *

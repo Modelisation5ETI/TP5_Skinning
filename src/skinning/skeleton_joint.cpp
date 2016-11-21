@@ -29,4 +29,11 @@ skeleton_joint::skeleton_joint(vec3 const& position_param,quaternion const& orie
     :position(position_param),orientation(orientation_param)
 {}
 
+mat4 skeleton_joint::to_mat4()
+{
+  mat4 transform;
+  transform.set_transformation( orientation.to_mat3(), position );
+  return transform;
+}
+
 }

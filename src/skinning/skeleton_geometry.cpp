@@ -137,6 +137,27 @@ void skeleton_geometry::load(std::string const& filename)
     fid.close();
 }
 
+std::vector<mat4> skeleton_geometry::to_mat4()
+{
+  transform_data.clear();
+
+  for( unsigned int i = 0; i<data.size();i++ )
+    {
+    transform_data.push_back(data[i].to_mat4());
+    }
+
+  return transform_data;
+}
+
+float const* skeleton_geometry::to_mat4_pointer()
+{
+  to_mat4();
+  return transform_data[0].pointer();
+}
+
+
+
+
 std::vector<skeleton_joint>::iterator skeleton_geometry::begin() {return data.begin();}
 std::vector<skeleton_joint>::iterator skeleton_geometry::end() {return data.end();}
 std::vector<skeleton_joint>::const_iterator skeleton_geometry::begin() const {return data.begin();}
@@ -174,8 +195,8 @@ skeleton_geometry local_to_global(skeleton_geometry const& sk_local,skeleton_par
         global_joint = sk_local[i]; // No parent => this is a global joint
       else
       {
-         global_joint.position = sk_local[p_i].orientation * sk_local[i].position + sk_local[p_i].position;
-         global_joint.orientation = sk_local[p_i].orientation * sk_local[i].orientation;
+         global_joint.position = sk_global[p_i].orientation * sk_local[i].position + sk_global[p_i].position;
+         global_joint.orientation = sk_global[p_i].orientation * sk_local[i].orientation;
       }
       sk_global.push_back(global_joint);
     }

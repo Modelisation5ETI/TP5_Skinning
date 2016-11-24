@@ -97,8 +97,8 @@ void myWidgetGL::timerEvent(QTimerEvent *event)
 
 myWidgetGL::myWidgetGL(const QGLFormat& format,QGLWidget *parent) :
     QGLWidget(format,parent),nav(),scene_3d(),draw_state(true),
-    staticPos_state(false),weights_state(false),
-    skeleton_state(false),blink_state(false)
+    skeleton_state(false),staticPos_state(false),
+    weights_state(false),blink_state(false)
 {
     QWidget::setFocusPolicy(Qt::StrongFocus);
     startTimer(25); //start timer every 25ms

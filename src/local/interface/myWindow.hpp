@@ -39,7 +39,7 @@ private slots:
     /** Set the squeleton mode for the meshes */
     void action_skeleton();
     /** Set the weight mode for the meshes */
-    void action_weight();
+    void action_weights();
     /** Set the squeleton mode for the meshes */
     void action_staticPos();
     /** Set the weight mode for the meshes */

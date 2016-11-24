@@ -24,21 +24,14 @@ void myWidgetGL::paintGL()
     glViewport (0, 0, nav.screen_size_x(),nav.screen_size_y()); PRINT_OPENGL_ERROR();
     glClearColor (1.0f, 1.0f, 1.0f, 1.0f);                      PRINT_OPENGL_ERROR();
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);        PRINT_OPENGL_ERROR();
-
     //draw 3D scene
     if(draw_state)
-        scene_3d.draw_scene(staticPos_state);
-
-    //draw 3D scene
-    if(staticPos_state)
-        std::cout<<"Pause"<<staticPos_state<<std::endl;
-        scene_3d.draw_scene(staticPos_state);
+        scene_3d.draw_scene(staticPos_state, weights_state,skeleton_state,blink_state);
 
     //draw indicating axes
     draw_axes();
 
 }
-
 
 void myWidgetGL::keyPressEvent(QKeyEvent *event)
 {
@@ -57,10 +50,7 @@ void myWidgetGL::keyPressEvent(QKeyEvent *event)
 
     QGLWidget::keyPressEvent(event);
     updateGL();
-
 }
-
-
 
 void myWidgetGL::mouseMoveEvent(QMouseEvent *event)
 {
@@ -105,12 +95,10 @@ void myWidgetGL::timerEvent(QTimerEvent *event)
     updateGL(); PRINT_OPENGL_ERROR();
 }
 
-
-
-
-
 myWidgetGL::myWidgetGL(const QGLFormat& format,QGLWidget *parent) :
-    QGLWidget(format,parent),nav(),scene_3d(),draw_state(true)
+    QGLWidget(format,parent),nav(),scene_3d(),draw_state(true),
+    staticPos_state(false),weights_state(false),
+    skeleton_state(false),blink_state(false)
 {
     QWidget::setFocusPolicy(Qt::StrongFocus);
     startTimer(25); //start timer every 25ms
@@ -190,40 +178,30 @@ void myWidgetGL::change_staticPos_state()
     updateGL();
 }
 
+void myWidgetGL::change_blink_state()
+{
+    blink_state=!blink_state;
+    updateGL();
+}
+
+void myWidgetGL::change_weights_state()
+{
+    weights_state=!weights_state;
+    updateGL();
+}
+
+void myWidgetGL::change_skeleton_state()
+{
+    skeleton_state=!skeleton_state;
+    updateGL();
+}
+
 void myWidgetGL::wireframe(bool const is_wireframe)
 {
     if(is_wireframe==true)
     {glPolygonMode( GL_FRONT_AND_BACK, GL_LINE); PRINT_OPENGL_ERROR();}
     else
     {glPolygonMode( GL_FRONT_AND_BACK, GL_FILL); PRINT_OPENGL_ERROR();}
-
-    updateGL();
-}
-
-void myWidgetGL::weight(bool const is_weight)
-{
-    if(is_weight==true)
-    {
-        std::cout<<"HELLO"<<std::endl;
-    }
-    else
-    {
-
-    }
-
-    updateGL();
-}
-
-void myWidgetGL::skeleton(bool const is_skeleton)
-{
-    if(is_skeleton==true)
-    {
-
-    }
-    else
-    {
-
-    }
 
     updateGL();
 }

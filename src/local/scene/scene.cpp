@@ -80,7 +80,6 @@ void scene::create_cylinder(float radius, float length,
     }
   }
   mesh_cylinder.fill_empty_field_by_default();
-
   // The skeleton parent structure
   // Ajoutez les indices des parents dans la variable sk_cylinder_parent_id (question 7)
   sk_cylinder_parent_id.push_back( -1 );
@@ -186,86 +185,82 @@ void scene::load_scene()
     sk_cat_animation.load("cat.animations",sk_cat_parent_id.size());
 }
 
-void scene::draw_scene(bool staticPos)
+void scene::draw_scene(bool staticPos, bool weights, bool skeleton, bool blink)
 {
-      std::cout<<"staticPos2"<<staticPos<<std::endl;
+     int const time_cylinder_max = 2000;
+     int const time_cat_max = 60;
 
-     if(staticPos)
+     // Gestion des timers (question 14)
+     if( time_cylinder.elapsed()>time_cylinder_max )
      {
-         std::cout<<"frameStatic"<<std::endl;
-         frame_cylinder_current = 0;
-         frame_cylinder_alpha = 0;
-         time_cylinder.restart();
-     }
+       time_cylinder.restart();
+       frame_cylinder_current = (frame_cylinder_current+1)%sk_cylinder_animation.size();
+      }
+      frame_cylinder_alpha = time_cylinder.elapsed()/static_cast<float>(time_cylinder_max);
 
+       //Cat
+      int frame_cat_offset = 0;
+      int frame_cat_time = sk_cat_animation.size();
 
-     if(!staticPos)
-     {
-         // Gestion des timers (question 14)
-         int const time_cylinder_max = 2000;
-         if( time_cylinder.elapsed()>time_cylinder_max )
-         {
-           time_cylinder.restart();
-           frame_cylinder_current = (frame_cylinder_current+1)%sk_cylinder_animation.size();
-         }
-         frame_cylinder_alpha = time_cylinder.elapsed()/static_cast<float>(time_cylinder_max);
+       if(blink)
+       {
+             frame_cat_offset = 50;
+             frame_cat_time = 75;
+       }
 
-             //Cat
-         int const time_cat_max = 60;
-         if( time_cat.elapsed()>time_cat_max )
-         {
-           time_cat.restart();
-           frame_cat_current = (frame_cat_current+1)%sk_cat_animation.size();
-         }
-           frame_cat_alpha = time_cat.elapsed()/static_cast<float>(time_cat_max);
-    }
+       if(!staticPos)
+       {
+       if( time_cat.elapsed()>time_cat_max )
+       {
 
-     //std::cout<<"Frame cylinder current : "<<frame_cylinder_current<<std::endl;
-
-    //frame_cat_alpha = 0;
+          time_cat.restart();
+          frame_cat_current = (frame_cat_current+1)%frame_cat_time;
+        }
+        frame_cat_alpha = time_cat.elapsed()/static_cast<float>(time_cat_max);
+        }
 
     // Mise en place du shader pour les squelettes
     setup_shader_skeleton(shader_skeleton);
-
     //Here we can draw skeletons as 3D segments
     skeleton_geometry const sk_cylinder_global =
      local_to_global( sk_cylinder_animation( frame_cylinder_current, frame_cylinder_alpha ), sk_cylinder_parent_id );
     std::vector<vec3> const sk_cylinder_bones =
       extract_bones ( sk_cylinder_global , sk_cylinder_parent_id );
-    draw_skeleton(sk_cylinder_bones );
+    //draw_skeleton(sk_cylinder_bones );
 
+    //Cat skeleton
     skeleton_geometry const sk_cat_global =
-      local_to_global( sk_cat_animation( frame_cat_current, frame_cat_alpha ), sk_cat_parent_id );
+      local_to_global( sk_cat_animation( frame_cat_current+frame_cat_offset, frame_cat_alpha ), sk_cat_parent_id );
     std::vector<vec3> const sk_cat_bones =
       extract_bones ( sk_cat_global , sk_cat_parent_id );
-    draw_skeleton( sk_cat_bones );
+    if(skeleton)
+      draw_skeleton( sk_cat_bones );
 
     // Draw the ground
     setup_shader_mesh(shader_mesh);
     mesh_ground_opengl.draw();
 
-
+    if(skeleton)
+    {
+        return; //no object to print
+    }
     // Draw the cylinder
-    skeleton_geometry const sk_cylinder_inverse_bind_pose =
+     skeleton_geometry const sk_cylinder_inverse_bind_pose =
       inversed( sk_cylinder_bind_pose );
-    skeleton_geometry const sk_cylinder_binded =
-      multiply( sk_cylinder_global, sk_cylinder_inverse_bind_pose );
+     skeleton_geometry const sk_cylinder_binded =
+       multiply( sk_cylinder_global, sk_cylinder_inverse_bind_pose );
+     setup_shader_skinning(shader_skinning, sk_cylinder_binded,weights);
+     //mesh_cylinder.draw();
 
-    setup_shader_skinning(shader_skinning, sk_cylinder_binded);
-    mesh_cylinder.draw();
-
-
-
-    // Draw the cat
-    skeleton_geometry const sk_cat_inverse_bind_pose =
-      inversed( sk_cat_bind_pose );
-    skeleton_geometry sk_cat_binded =
-      multiply( sk_cat_global, sk_cat_inverse_bind_pose );
-    setup_shader_skinning(shader_skinning, sk_cat_binded);
-    glBindTexture(GL_TEXTURE_2D,texture_cat);
-    mesh_cat.draw();
+     // Draw the cat
+     skeleton_geometry const sk_cat_inverse_bind_pose =
+       inversed( sk_cat_bind_pose );
+     skeleton_geometry sk_cat_binded =
+       multiply( sk_cat_global, sk_cat_inverse_bind_pose );
+     setup_shader_skinning(shader_skinning, sk_cat_binded,weights);
+     glBindTexture(GL_TEXTURE_2D,texture_cat);
+     mesh_cat.draw();
 }
-
 
 void scene::setup_shader_mesh(GLuint const shader_id)
 {
@@ -303,7 +298,7 @@ void scene::setup_shader_skeleton(GLuint const shader_id)
     glLineWidth(3.0f);                                                                                 PRINT_OPENGL_ERROR();
 }
 
-void scene::setup_shader_skinning(GLuint const shader_id, skeleton_geometry geometry)
+void scene::setup_shader_skinning(GLuint const shader_id, skeleton_geometry geometry, bool weights)
 {
     //Setup uniform parameters
     glUseProgram(shader_id);                                                                           PRINT_OPENGL_ERROR();
@@ -313,6 +308,7 @@ void scene::setup_shader_skinning(GLuint const shader_id, skeleton_geometry geom
 
     //Set Uniform data to GPU
     glUniform1i(get_uni_loc(shader_id,"texture"),0);PRINT_OPENGL_ERROR();
+    glUniform1f(get_uni_loc(shader_id,"debugWeights"),float(weights));PRINT_OPENGL_ERROR();
     glUniformMatrix4fv(get_uni_loc(shader_id,"camera_modelview"),1,false,cam.modelview.pointer());     PRINT_OPENGL_ERROR();
     glUniformMatrix4fv(get_uni_loc(shader_id,"camera_projection"),1,false,cam.projection.pointer());   PRINT_OPENGL_ERROR();
     glUniformMatrix4fv(get_uni_loc(shader_id,"skeleton_geometry"),geometry.size(),false,geometry.to_mat4_pointer());   PRINT_OPENGL_ERROR();

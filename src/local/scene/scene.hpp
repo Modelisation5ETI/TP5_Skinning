@@ -35,7 +35,7 @@ public:
     void load_scene();
 
     /**  Method called at every frame */
-    void draw_scene();
+    void draw_scene(bool staticPos, bool weights, bool skeleton, bool blink);
 
     /** Set the pointer to the parent Widget */
     void set_widget(myWidgetGL* widget_param);
@@ -96,7 +96,7 @@ private:
 
     void setup_shader_mesh(GLuint shader_id);
     void setup_shader_skeleton(GLuint shader_id);
-    void setup_shader_skinning(GLuint const shader_id,cpe::skeleton_geometry geometry);
+    void setup_shader_skinning(GLuint const shader_id,cpe::skeleton_geometry geometry, bool weights);
 
     // Time handling for the cylinder animation
     QTime time_cylinder;

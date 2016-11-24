@@ -24,16 +24,14 @@ void myWidgetGL::paintGL()
     glViewport (0, 0, nav.screen_size_x(),nav.screen_size_y()); PRINT_OPENGL_ERROR();
     glClearColor (1.0f, 1.0f, 1.0f, 1.0f);                      PRINT_OPENGL_ERROR();
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);        PRINT_OPENGL_ERROR();
-
     //draw 3D scene
     if(draw_state)
-        scene_3d.draw_scene();
+        scene_3d.draw_scene(staticPos_state, weights_state,skeleton_state,blink_state);
 
     //draw indicating axes
     draw_axes();
 
 }
-
 
 void myWidgetGL::keyPressEvent(QKeyEvent *event)
 {
@@ -52,10 +50,7 @@ void myWidgetGL::keyPressEvent(QKeyEvent *event)
 
     QGLWidget::keyPressEvent(event);
     updateGL();
-
 }
-
-
 
 void myWidgetGL::mouseMoveEvent(QMouseEvent *event)
 {
@@ -100,12 +95,10 @@ void myWidgetGL::timerEvent(QTimerEvent *event)
     updateGL(); PRINT_OPENGL_ERROR();
 }
 
-
-
-
-
 myWidgetGL::myWidgetGL(const QGLFormat& format,QGLWidget *parent) :
-    QGLWidget(format,parent),nav(),scene_3d(),draw_state(true)
+    QGLWidget(format,parent),nav(),scene_3d(),draw_state(true),
+    staticPos_state(false),weights_state(false),
+    skeleton_state(false),blink_state(false)
 {
     QWidget::setFocusPolicy(Qt::StrongFocus);
     startTimer(25); //start timer every 25ms
@@ -178,6 +171,31 @@ void myWidgetGL::change_draw_state()
     draw_state=!draw_state;
     updateGL();
 }
+
+void myWidgetGL::change_staticPos_state()
+{
+    staticPos_state=!staticPos_state;
+    updateGL();
+}
+
+void myWidgetGL::change_blink_state()
+{
+    blink_state=!blink_state;
+    updateGL();
+}
+
+void myWidgetGL::change_weights_state()
+{
+    weights_state=!weights_state;
+    updateGL();
+}
+
+void myWidgetGL::change_skeleton_state()
+{
+    skeleton_state=!skeleton_state;
+    updateGL();
+}
+
 void myWidgetGL::wireframe(bool const is_wireframe)
 {
     if(is_wireframe==true)
@@ -187,6 +205,21 @@ void myWidgetGL::wireframe(bool const is_wireframe)
 
     updateGL();
 }
+
+//void myWidgetGL::staticPos(bool const is_staticPos)
+//{
+//    if(is_staticPos==true)
+//    {
+//        //no animation apply
+
+//    }
+//    else
+//    {
+//        //animation apply
+//    }
+
+//    updateGL();
+//}
 
 
 void myWidgetGL::resizeGL(int const width,int const height)

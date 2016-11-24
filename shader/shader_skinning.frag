@@ -1,15 +1,13 @@
 #version 130
 
 uniform sampler2D texture;
-
+uniform bool debugWeights;
 in vec2 v_text_coord;
 in vec3 v_position;
 in vec3 v_normal;
 
 in vec4 v_weight;
 flat in ivec4 v_jointID;
-
-bool debugWeights = false;
 
 out vec4 color;
 

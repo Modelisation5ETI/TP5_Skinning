@@ -29,7 +29,7 @@ qtcreator ../TP5_Skinning
 
 -----
 
- <img src="./Screenshots/SkinnedCat.png" alt="SkinnedCylinder" width="500" height="200" />
+ <img src="./Screenshots/SkinnedCat.png" alt="SkinnedCylinder" width="500" height="400" />
 
  ```
  ./Skinning

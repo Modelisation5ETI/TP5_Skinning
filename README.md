@@ -29,7 +29,7 @@ qtcreator ../TP5_Skinning
 
 -----
 
- <img src="./Screenshots/SkinnedCat.png" alt="SkinnedCylinder" width="200" height="200" />
+ <img src="./Screenshots/SkinnedCat.png" alt="SkinnedCylinder" width="500" height="200" />
 
  ```
  ./Skinning
@@ -37,11 +37,8 @@ qtcreator ../TP5_Skinning
 Skinning cat using weights
 
 
-*checkbox weights : print weights on cat mesh 
-
-*checkbox skeleton : print the skeleton of the cat
-
-*checkbox blink : the cat blink
-
+ - checkbox weights : print weights on cat mesh 
+ - checkbox skeleton : print the skeleton of the cat
+ - checkbox blink : the cat blink
 
 <img src="./Screenshots/CatSkeleton.png" alt="CatSkeleton" width="200" height="200" /> <img src="./Screenshots/CatSkeletonWeights.png" alt="CatSkeletonWeights" width="200" height="200" />
